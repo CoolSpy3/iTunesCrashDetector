@@ -82,7 +82,7 @@ int main() {
         if(MessageBox(NULL, "iTunes is hanging. Terminate?", "iTunesCrashDetector", MB_YESNO) == IDYES) {
             // They said yes :D KILL ITUNES!!!!
             TerminateProcess(iTunes.procHandle, 1);
-            Sleep(500); // Wait a second for stuff to happen
+            Sleep(500); // Wait half a second for stuff to happen
             // Restart iTunes
             ShellExecute(
                     NULL,
