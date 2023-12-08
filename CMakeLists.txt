@@ -3,4 +3,4 @@ project(iTunesCrashDetector)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(iTunesCrashDetector main.cpp)
+add_executable(iTunesCrashDetector WIN32 main.cpp)
