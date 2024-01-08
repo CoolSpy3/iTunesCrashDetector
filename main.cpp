@@ -4,7 +4,20 @@
 #include <Windows.h>
 #include <psapi.h>
 
-const char* iTunesEXE = "C:\\Program Files\\iTunes\\iTunes.exe";
+#if defined(UNICODE)
+#include <cwchar>
+#define rchr wcsrchr
+#define cmp wcscmp
+#define cpy wcscpy_s
+#else
+#include <cstring>
+#define rchr strrchr
+#define cmp strcmp
+#define cpy strcpy_s
+#endif
+
+const TCHAR* iTunesEXE = TEXT("iTunes.exe");
+TCHAR* iTunesProcessLocation = new TCHAR[MAX_PATH];
 
 struct Process {
     HANDLE procHandle;
@@ -18,12 +31,18 @@ BOOL CALLBACK FindITunesProc(HWND hwnd, LPARAM lParam) {
     // Modified from Windows Docs' example code
     HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_TERMINATE, FALSE, processId);
     if(process) {
-        // Get the name of the process
-        TCHAR processName[MAX_PATH] = TEXT("<unknown>");
-        GetModuleFileNameEx(process, NULL, processName, sizeof(processName)/sizeof(TCHAR));
+        // Get the path of the process
+        TCHAR processPath[MAX_PATH] = TEXT("<unknown>");
+        GetModuleFileNameEx(process, NULL, processPath, sizeof(processPath)/sizeof(TCHAR));
+
+        // The process name is everything after the last backslash
+        TCHAR* processName = rchr(processPath, TEXT('\\')) + 1;
 
         // If it's "iTunes.exe", we've found iTunes
-        if(strcmp(processName, iTunesEXE) == 0) {
+        if(cmp(processName, iTunesEXE) == 0) {
+            // Store the path so we can use it to restart iTunes
+            cpy(iTunesProcessLocation, MAX_PATH, processPath);
+
             // Populate the process struct
             auto *iTunes = reinterpret_cast<Process*>(lParam);
             iTunes->procHandle = process;
@@ -49,7 +68,7 @@ bool FindITunes(Process *iTunes) {
 }
 
 int main() {
-    HANDLE runningMutex = CreateMutex(NULL, TRUE, "iTunesCrashDetector/Running");
+    HANDLE runningMutex = CreateMutex(NULL, TRUE, TEXT("iTunesCrashDetector/Running"));
     if(!runningMutex) {
         // Program is already running. Terminate
         exit(2);
@@ -79,7 +98,7 @@ int main() {
         // ITunes is dead :(
 
         // Ask the user for permission to restart iTunes
-        if(MessageBox(NULL, "iTunes is hanging. Terminate?", "iTunesCrashDetector", MB_YESNO) == IDYES) {
+        if(MessageBox(NULL, TEXT("iTunes is hanging. Terminate?"), TEXT("iTunesCrashDetector"), MB_YESNO) == IDYES) {
             // They said yes :D KILL ITUNES!!!!
             TerminateProcess(iTunes.procHandle, 1);
             Sleep(500); // Wait half a second for stuff to happen
@@ -87,9 +106,9 @@ int main() {
             ShellExecute(
                     NULL,
                     NULL,
-                    iTunesEXE,
-                    "",
-                    "C:\\Windows\\System32\\",
+                    iTunesProcessLocation,
+                    TEXT(""),
+                    TEXT("C:\\Windows\\System32\\"),
                     SW_NORMAL
             );
             // iTunes just got restarted. Wait 30 seconds before checking again
