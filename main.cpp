@@ -97,6 +97,15 @@ int main() {
 
         // ITunes is dead :(
 
+        // Wait a second and recheck to avoid false positives
+        Sleep(1000);
+
+        if(!IsHungAppWindow(iTunes.procWND)) { // Is iTunes running!
+            // Yep! Wait 1 second before checking again
+            Sleep(1000);
+            continue;
+        }
+
         // Ask the user for permission to restart iTunes
         if(MessageBox(NULL, TEXT("iTunes is hanging. Terminate?"), TEXT("iTunesCrashDetector"), MB_YESNO) == IDYES) {
             // They said yes :D KILL ITUNES!!!!
