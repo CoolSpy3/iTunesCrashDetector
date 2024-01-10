@@ -69,7 +69,7 @@ bool FindITunes(Process *iTunes) {
 
 int main() {
     HANDLE runningMutex = CreateMutex(NULL, TRUE, TEXT("iTunesCrashDetector/Running"));
-    if(!runningMutex) {
+    if(!runningMutex || GetLastError() == ERROR_ALREADY_EXISTS) {
         // Program is already running. Terminate
         exit(2);
     }
