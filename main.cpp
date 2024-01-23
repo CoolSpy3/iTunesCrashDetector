@@ -29,7 +29,14 @@ BOOL CALLBACK FindITunesProc(HWND hwnd, LPARAM lParam) {
     DWORD processId;
     GetWindowThreadProcessId(hwnd, &processId);
     // Modified from Windows Docs' example code
-    HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_TERMINATE, FALSE, processId);
+    DWORD accessRights =
+        // Ability to read process metadata
+        PROCESS_QUERY_INFORMATION | PROCESS_VM_READ |
+        // Ability to check if the process is still running
+        SYNCHRONIZE |
+        // Ability to kill the process
+        PROCESS_TERMINATE;
+    HANDLE process = OpenProcess(accessRights, FALSE, processId);
     if(process) {
         // Get the path of the process
         TCHAR processPath[MAX_PATH] = TEXT("<unknown>");
@@ -71,7 +78,7 @@ int main() {
     HANDLE runningMutex = CreateMutex(NULL, TRUE, TEXT("iTunesCrashDetector/Running"));
     if(!runningMutex || GetLastError() == ERROR_ALREADY_EXISTS) {
         // Program is already running. Terminate
-        exit(2);
+        // exit(2);
     }
     Process iTunes = {NULL, NULL};
     while(TRUE) { // FOREVER
